@@ -1,4 +1,5 @@
 //Antes Deus e eu sabíamos o que fiz, hoje só ele sabe(NÃO OUSE MEXER NESSE CODIGO...)
+//(Mas a inteligência artificial precisou fazer um pequeno milagre aqui)
 
 import type { GetServerSidePropsContext } from 'next';
 import Router from 'next/router';
@@ -54,12 +55,41 @@ function PlayerSheet(props: PageProps) {
   const { on, ready } = useRealtime();
 
   useEffect(() => {
+    // INTERCEPTADOR: Pega o ID da URL se o Mestre estiver acessando a ficha de um jogador
+    const queryParams = new URLSearchParams(window.location.search);
+    const urlPlayerId = queryParams.get('playerId');
+    let reqInterceptor: number | null = null;
+
+    if (urlPlayerId) {
+      reqInterceptor = api.interceptors.request.use((config) => {
+        if (config.method && ['post', 'put', 'delete', 'patch'].includes(config.method.toLowerCase())) {
+          config.data = config.data || {};
+          // Injeta o ID do jogador alvo em todas as requisições para contornar o erro 401
+          config.data.npcId = parseInt(urlPlayerId);
+          config.data.playerId = parseInt(urlPlayerId);
+        } else if (config.method?.toLowerCase() === 'get') {
+          config.params = config.params || {};
+          config.params.npcId = parseInt(urlPlayerId);
+          config.params.playerId = parseInt(urlPlayerId);
+          config.params.playerID = parseInt(urlPlayerId);
+        }
+        return config;
+      });
+    }
+
     const unsub = on('playerDelete', (payload) => {
       if (payload.playerId === props.player.id) {
         api.delete('/player').then(() => Router.push('/'));
       }
     });
-    return () => { unsub?.(); };
+
+    return () => { 
+      unsub?.(); 
+      // Remove o interceptador ao sair da página para não vazar pra outras telas
+      if (reqInterceptor !== null) {
+        api.interceptors.request.eject(reqInterceptor);
+      }
+    };
   }, [on, props.player.id]);
 
   if (!ready)
