@@ -380,7 +380,10 @@ export default function PlayerManager(props: PlayerManagerProps) {
 							{player.PlayerAttributes.length > 0 && (
 								<>
 									<Row>
-										{player.PlayerAttributes.map((attr) => (
+										{/* ORDENAÇÃO APLICADA AQUI ABAIXO */}
+										{[...player.PlayerAttributes]
+											.sort((a, b) => a.Attribute.id - b.Attribute.id)
+											.map((attr) => (
 											<Col key={attr.Attribute.id}>
 												<Row>
 													<Col
