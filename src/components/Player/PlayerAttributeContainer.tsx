@@ -82,27 +82,30 @@ export default function PlayerAttributeContainer(props: PlayerAttributeContainer
 					<GeneralDiceRollModal npcId={props.npcId} />
 				</Col>
 			</Row>
-			{props.playerAttributes.map((attr) => {
-				const status = playerAttributeStatus.filter(
-					(stat) => stat.AttributeStatus.attribute_id === attr.Attribute.id
-				);
-				return (
-					<PlayerAttributeField
-						key={attr.Attribute.id}
-						attributeDiceConfig={props.attributeDiceConfig}
-						playerAttribute={attr}
-						playerStatus={status}
-						onEdit={(id, value, maxValue) =>
-							setAttrEditor({ id, value, maxValue, show: true })
-						}
-						editor={attrEditor}
-						onStatusChanged={onStatusChanged}
-						showDiceRollResult={onDiceRoll}
-						visibilityEnabled={attr.Attribute.portrait != null}
-						npcId={props.npcId}
-					/>
-				);
-			})}
+			{/* A ORDENAÇÃO FOI APLICADA AQUI (.sort) PARA TRAVAR A POSIÇÃO NA TELA */}
+			{[...props.playerAttributes]
+				.sort((a, b) => a.Attribute.id - b.Attribute.id)
+				.map((attr) => {
+					const status = playerAttributeStatus.filter(
+						(stat) => stat.AttributeStatus.attribute_id === attr.Attribute.id
+					);
+					return (
+						<PlayerAttributeField
+							key={attr.Attribute.id}
+							attributeDiceConfig={props.attributeDiceConfig}
+							playerAttribute={attr}
+							playerStatus={status}
+							onEdit={(id, value, maxValue) =>
+								setAttrEditor({ id, value, maxValue, show: true })
+							}
+							editor={attrEditor}
+							onStatusChanged={onStatusChanged}
+							showDiceRollResult={onDiceRoll}
+							visibilityEnabled={attr.Attribute.portrait != null}
+							npcId={props.npcId}
+						/>
+					);
+				})}
 			<PlayerAttributeEditorModal
 				value={attrEditor}
 				onHide={() => setAttrEditor(editorInitialValue)}
@@ -312,14 +315,17 @@ function PlayerAttributeField(props: PlayerAttributeFieldProps) {
 				</Row>
 				<Row className='mt-2'>
 					<Col>
-						{props.playerStatus.map((stat) => (
-							<PlayerAttributeStatusField
-								key={stat.AttributeStatus.id}
-								playerAttributeStatus={stat}
-								onStatusChanged={props.onStatusChanged}
-								npcId={props.npcId}
-							/>
-						))}
+						{/* A ORDENAÇÃO FOI APLICADA AQUI TAMBÉM PARA OS STATUS */}
+						{[...props.playerStatus]
+							.sort((a, b) => a.AttributeStatus.id - b.AttributeStatus.id)
+							.map((stat) => (
+								<PlayerAttributeStatusField
+									key={stat.AttributeStatus.id}
+									playerAttributeStatus={stat}
+									onStatusChanged={props.onStatusChanged}
+									npcId={props.npcId}
+								/>
+							))}
 					</Col>
 				</Row>
 			</Col>
