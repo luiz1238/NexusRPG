@@ -19,11 +19,14 @@ export default function AttributeEditorContainer(props: AttributeEditorContainer
 		operation: 'create',
 		show: false,
 	});
+	// ORDENAÇÃO APLICADA AQUI ABAIXO PARA A LISTA DE ATRIBUTOS
 	const [attributes, setAttributes] = useState(
-		props.attributes.map((attr) => ({
-			...attr,
-			color: `#${attr.color}`,
-		}))
+		[...props.attributes]
+			.sort((a, b) => a.id - b.id)
+			.map((attr) => ({
+				...attr,
+				color: `#${attr.color}`,
+			}))
 	);
 	const logError = useContext(ErrorLogger);
 
@@ -140,7 +143,10 @@ function AttributeStatusEditorContainer(props: AttributeStatusEditorContainerPro
 		operation: 'create',
 		show: false,
 	});
-	const [attributeStatus, setAttributeStatus] = useState(props.attributeStatus);
+	// ORDENAÇÃO APLICADA AQUI ABAIXO PARA OS STATUS
+	const [attributeStatus, setAttributeStatus] = useState(
+		[...props.attributeStatus].sort((a, b) => a.id - b.id)
+	);
 	const logError = useContext(ErrorLogger);
 
 	function onAttributeStatusModalSubmit({ id, name, attribute_id }: AttributeStatus) {
