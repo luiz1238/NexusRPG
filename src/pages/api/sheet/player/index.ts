@@ -1,69 +1,111 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import database from '../../../../utils/database';
+import prisma from '../../../../utils/database';
 import { sessionAPI } from '../../../../utils/session';
-import { broadcast } from '../../../../utils/broadcast';
 
-function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method === 'DELETE') return handleDelete(req, res);
-  if (req.method === 'POST') return handlePost(req, res);
-  res.status(404).end();
-}
+async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'GET') {
+    res.status(405).end();
+    return;
+  }
 
-async function handlePost(req: NextApiRequest, res: NextApiResponse) {
   const player = req.session.player;
-  const npcId: number | undefined = req.body.npcId;
 
-  if (!player || (player.admin && !npcId)) {
+  if (!player) {
     res.status(401).end();
     return;
   }
 
-  const name: string | undefined = req.body.name;
-  const showName: boolean | undefined = req.body.showName;
-  const maxLoad: number | undefined = req.body.maxLoad;
-  const maxSlots: number | undefined = req.body.maxSlots;
-
-  const playerId = npcId ? npcId : player.id;
-
-  await database.player.update({
-    where: { id: playerId },
-    data: { name, showName, maxLoad, spellSlots: maxSlots },
+  const playerData = await prisma.player.findUnique({
+    where: { id: player.id },
+    select: {
+      id: true,
+      name: true,
+      maxLoad: true,
+      spellSlots: true,
+      PlayerAttribute: {
+        orderBy: { attributeId: 'asc' }, // Ordena os Atributos pelo ID de criação no Editor
+        select: {
+          value: true,
+          maxValue: true,
+          show: true,
+          Attribute: true,
+        },
+      },
+      PlayerAttributeStatus: {
+        orderBy: { attributeStatusId: 'asc' }, // Ordena os Status de Atributo
+        select: {
+          value: true,
+          AttributeStatus: true,
+        },
+      },
+      PlayerCharacteristic: {
+        orderBy: { characteristicId: 'asc' }, // Ordena as Características na ordem do Editor
+        select: {
+          value: true,
+          Characteristic: true,
+        },
+      },
+      PlayerCurrency: {
+        orderBy: { currencyId: 'asc' }, // Ordena as Moedas
+        select: {
+          value: true,
+          Currency: true,
+        },
+      },
+      PlayerEquipment: {
+        orderBy: { equipmentId: 'asc' }, // Ordena os Equipamentos
+        select: {
+          currentAmmo: true,
+          Equipment: true,
+        },
+      },
+      PlayerExtraInfo: {
+        orderBy: { extraInfoId: 'asc' }, // Ordena as Informações Extras
+        select: {
+          value: true,
+          ExtraInfo: true,
+        },
+      },
+      PlayerInfo: {
+        orderBy: { infoId: 'asc' }, // Ordena as Informações
+        select: {
+          value: true,
+          Info: true,
+        },
+      },
+      PlayerItem: {
+        orderBy: { itemId: 'asc' }, // Ordena os Itens
+        select: {
+          quantity: true,
+          currentDescription: true,
+          Item: true,
+        },
+      },
+      PlayerSkill: {
+        orderBy: { skillId: 'asc' }, // Ordena as Perícias
+        select: {
+          value: true,
+          checked: true,
+          Skill: true,
+        },
+      },
+      PlayerSpec: {
+        orderBy: { specId: 'asc' }, // Ordena as Especializações/Especialidades
+        select: {
+          value: true,
+          Spec: true,
+        },
+      },
+      PlayerSpell: {
+        orderBy: { spellId: 'asc' }, // Ordena os Rituais/Magias
+        select: {
+          Spell: true,
+        },
+      },
+    },
   });
 
-  res.end();
-
-  if (!npcId) {
-    if (maxSlots !== undefined)
-      broadcast('playerSpellSlotsChange', { playerId, newSpellSlots: maxSlots });
-    if (maxLoad !== undefined)
-      broadcast('playerMaxLoadChange', { playerId, newLoad: maxLoad });
-  }
-
-  if (name !== undefined) broadcast('playerNameChange', { playerId, value: name });
-  if (showName !== undefined)
-    broadcast('playerNameShowChange', { playerId, show: showName });
-}
-
-async function handleDelete(req: NextApiRequest, res: NextApiResponse) {
-  const player = req.session.player;
-
-  if (!player || !player.admin) {
-    res.status(401).end();
-    return;
-  }
-
-  const playerID = req.body.id;
-
-  if (!playerID) {
-    res.status(400).send({ message: 'Player ID is undefined.' });
-    return;
-  }
-
-  await database.player.delete({ where: { id: playerID } });
-
-  res.end();
-
-  broadcast('playerDelete', { playerId: playerID });
+  res.send({ player: playerData });
 }
 
 export default sessionAPI(handler);
