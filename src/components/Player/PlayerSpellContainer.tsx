@@ -109,7 +109,7 @@ export default function PlayerSpellContainer(props: PlayerSpellContainerProps) {
 		return () => { unsubs.forEach(u => u()); };
 	}, [on]);
 
-	// Lógica de Criar Magia Customizada
+	// Lógica de Criar Ritual Customizado
 	function onSpellCreateSubmit(spell: RitualData) {
 		setLoading(true);
 		api
@@ -126,7 +126,7 @@ export default function PlayerSpellContainer(props: PlayerSpellContainerProps) {
 			.finally(() => setLoading(false));
 	}
 
-	// Lógica de Editar Magia (Duplo Clique)
+	// Lógica de Editar Ritual (Duplo Clique)
 	function onSpellEditSubmit(spell: RitualData) {
 		setLoading(true);
 		api
@@ -190,7 +190,7 @@ export default function PlayerSpellContainer(props: PlayerSpellContainerProps) {
 								setSpellEditorModalShow(true);
 							}}
 						>
-							+ Criar Magia Customizada
+							+ Criar Ritual Customizado
 						</Button>
 					</Col>
 				</Row>
@@ -255,7 +255,7 @@ function PlayerSpellField({
 	const [loading, setLoading] = useState(false);
 
 	function deleteSpell() {
-		if (!confirm('Tem certeza que deseja apagar essa magia?')) return;
+		if (!confirm('Tem certeza que deseja apagar esse ritual?')) return;
 		setLoading(true);
 		api
 			.delete('/sheet/player/spell', { data: { id: spell.id, npcId } })
@@ -291,7 +291,7 @@ function PlayerSpellField({
 						<Col 
 							className='h2'
 							onDoubleClick={onEditBase} 
-							title="Dê um duplo clique para editar esta magia."
+							title="Dê um duplo clique para editar este ritual."
 							style={{ cursor: 'pointer', color: '#b175ff', textDecoration: 'underline' }}
 						>
 							{spell.name}
