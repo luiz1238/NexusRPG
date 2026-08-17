@@ -156,7 +156,8 @@ function PlayerSheet(props: PageProps) {
 						</Row>
 						<hr />
 						<Row className='mb-3'>
-							<DataContainer outline title='Características'>
+							{/* AQUI FOI ALTERADO DE 'Características' PARA 'Atributos' */}
+							<DataContainer outline title='Atributos'>
 								<PlayerCharacteristicContainer
 									playerCharacteristics={chars}
 									characteristicDiceConfig={
@@ -223,11 +224,6 @@ async function getSSP(ctx: GetServerSidePropsContext) {
 			targetId = parsedId;
 		}
 	}
-
-	console.log('=== DEBUG DA FICHA ===');
-	console.log('Sessão:', playerSession);
-	console.log('URL da Query:', ctx.query);
-	console.log('ID que vai pro banco:', targetId);
 
 	const results = await prisma.$transaction([
 		prisma.player.findUnique({
@@ -304,7 +300,6 @@ async function getSSP(ctx: GetServerSidePropsContext) {
 	]);
 
 	if (!results[0]) {
-		console.log('JOGADOR NÃO ENCONTRADO! Destruindo a sessão se não for mestre...');
 		if (!playerSession.admin) {
 			ctx.req.session.destroy();
 		}
