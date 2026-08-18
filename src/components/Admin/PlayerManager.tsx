@@ -9,7 +9,7 @@ import type {
   Spec,
   Spell,
 } from '@prisma/client';
-import { Reducer, useContext, useEffect, useReducer } from 'react';
+import { Reducer, useContext, useEffect, useReducer, useMemo } from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
@@ -235,6 +235,13 @@ export default function PlayerManager(props: PlayerManagerProps) {
   const { on } = useRealtime();
   const logError = useContext(ErrorLogger);
 
+  // ORDENAÇÃO ALFABÉTICA FIXA DAS FICHAS DOS JOGADORES
+  const sortedPlayers = useMemo(() => {
+    return [...players].sort((a, b) =>
+      (a.name || 'Desconhecido').localeCompare(b.name || 'Desconhecido', 'pt-BR', { sensitivity: 'base' })
+    );
+  }, [players]);
+
 	function onDeletePlayer(id: number) {
 		if (!confirm('Tem certeza que deseja apagar esse jogador?')) return;
 		api
@@ -299,7 +306,7 @@ export default function PlayerManager(props: PlayerManagerProps) {
     return () => { unsubs.forEach(u => u()); };
   }, [on]);
 
-	if (players.length === 0)
+	if (sortedPlayers.length === 0)
 		return (
 			<Col className='h2 text-center' style={{ color: 'gray' }}>
 				Não há nenhum jogador cadastrado.
@@ -308,7 +315,7 @@ export default function PlayerManager(props: PlayerManagerProps) {
 
 	return (
 		<>
-			{players.map((player) => (
+			{sortedPlayers.map((player) => (
 				<Col key={player.id} xs={12} md={6} xl={4} className='h-100 my-2'>
 					<Row className='player-container text-center'>
 						<Col>
@@ -561,7 +568,6 @@ function ItemHeader({
 	maxLoad: number;
 }) {
 	const load = playerItem.reduce((prev, cur) => prev + cur.Item.weight * cur.quantity, 0);
-	// Arredondando para no máximo 2 casas decimais no painel do mestre
 	const currentLoad = Number(load.toFixed(2));
 	return (
 		<>
