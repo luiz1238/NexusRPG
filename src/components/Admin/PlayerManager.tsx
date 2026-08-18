@@ -221,7 +221,7 @@ const PlayerManagerReducer: Reducer<Player[], ReducerActions<PlayerManagerAction
 			players[playerIndex].spellSlots = action.data[1];
 			break;
 	}
-	return[...players];
+	return [...players];
 };
 
 type PlayerManagerProps = {
@@ -324,7 +324,6 @@ export default function PlayerManager(props: PlayerManagerProps) {
 									</Button>
 								</Col>
 								<Col xs='auto' className='px-0'>
-									{/* Usando um link real para evitar bloqueio de pop-up */}
 									<a 
 										href={`/sheet/player/1?playerId=${player.id}`} 
 										target="_blank" 
@@ -344,7 +343,6 @@ export default function PlayerManager(props: PlayerManagerProps) {
 									<PlayerPortraitButton playerId={player.id} />
 								</Col>
 							</Row>
-							{/* FIM DA BARRINHA DE BOTÕES */}
 
 							<Row>
 								<AvatarField
@@ -380,7 +378,6 @@ export default function PlayerManager(props: PlayerManagerProps) {
 							{player.PlayerAttributes.length > 0 && (
 								<>
 									<Row>
-										{/* ORDENAÇÃO APLICADA AQUI ABAIXO */}
 										{[...player.PlayerAttributes]
 											.sort((a, b) => a.Attribute.id - b.Attribute.id)
 											.map((attr) => (
@@ -564,11 +561,13 @@ function ItemHeader({
 	maxLoad: number;
 }) {
 	const load = playerItem.reduce((prev, cur) => prev + cur.Item.weight * cur.quantity, 0);
+	// Arredondando para no máximo 2 casas decimais no painel do mestre
+	const currentLoad = Number(load.toFixed(2));
 	return (
 		<>
 			Peso Atual:{' '}
-			<span style={{ color: load > maxLoad ? 'red' : '' }}>
-				{load}/{maxLoad}
+			<span style={{ color: currentLoad > maxLoad ? 'red' : '' }}>
+				{currentLoad}/{maxLoad}
 			</span>
 		</>
 	);
