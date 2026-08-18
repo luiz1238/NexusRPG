@@ -27,8 +27,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (name === 'environment') {
     broadcast('environmentChange', { value });
   }
-  
-  if (name === 'environmentColor') {
-    broadcast('portraitEnvironmentColorChange', { color: value });
-  }
 }
