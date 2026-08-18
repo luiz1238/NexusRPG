@@ -385,7 +385,9 @@ export default function PlayerItemContainer(props: PlayerItemContainerProps) {
 		);
 	}
 
-	const colorStyle = { color: load > parseFloat(maxLoad) ? 'red' : 'inherit' };
+	// Arredondando o valor visual para no máximo duas casas decimais
+	const currentLoad = Number(load.toFixed(2));
+	const colorStyle = { color: currentLoad > parseFloat(maxLoad) ? 'red' : 'inherit' };
 
 	const playerItemList = useMemo(() => {
 		return playerItems.sort((a, b) => a.Item.id - b.Item.id);
@@ -428,8 +430,10 @@ export default function PlayerItemContainer(props: PlayerItemContainerProps) {
 
 				<Row>
 					<Col className='text-center h5'>
-						<span className='me-2'>Capacidade:</span>
-						<span style={colorStyle}> {load} /</span>
+						{/* Trocado Capacidade para Peso */}
+						<span className='me-2'>Peso:</span>
+						{/* Usando o valor já arredondado */}
+						<span style={colorStyle}> {currentLoad} /</span>
 						<BottomTextInput
 							value={maxLoad}
 							onChange={(ev) => setMaxLoad(ev.currentTarget.value)}
