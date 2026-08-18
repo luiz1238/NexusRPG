@@ -1,16 +1,14 @@
-import copyToClipboard from 'copy-to-clipboard';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Col from 'react-bootstrap/Col';
-import Container from 'react-bootstrap/Container';
 import FormCheck from 'react-bootstrap/FormCheck';
 import FormControl from 'react-bootstrap/FormControl';
-import FormGroup from 'react-bootstrap/FormGroup';
 import FormLabel from 'react-bootstrap/FormLabel';
-import FormSelect from 'react-bootstrap/FormSelect';
 import Modal from 'react-bootstrap/Modal';
 import Row from 'react-bootstrap/Row';
-import { RiFileCopyLine } from 'react-icons/ri';
+import api from '../../utils/api';
+
+export type PortraitEnvironmentOrientation = 'Direita' | 'Esquerda';
 
 type GetPortraitModalProps = {
 	show: boolean;
@@ -18,105 +16,105 @@ type GetPortraitModalProps = {
 	playerId: number;
 };
 
-const SETTINGS_ORIENTATIONS = ['Esquerda', 'Direita'];
-
-export type PortraitEnvironmentOrientation = 'Esquerda' | 'Direita';
-
 export default function GetPortraitModal(props: GetPortraitModalProps) {
-	const [diceColor, setDiceColor] = useState('#ddaf0f');
-	const [nameOrientation, setNameOrientation] =
-		useState<PortraitEnvironmentOrientation>('Direita');
+	const [orientation, setOrientation] = useState<PortraitEnvironmentOrientation>('Direita');
 	const [showDiceRoll, setShowDiceRoll] = useState(true);
-	const hostName = useRef('');
+	const [diceColor, setDiceColor] = useState('ddaf0f');
+	const [copied, setCopied] = useState(false);
 
-	const fieldValue =
-		`${hostName.current}/portrait/${props.playerId}` +
-		`?dicecolor=${diceColor.substring(1)}` +
-		`&showdiceroll=${showDiceRoll}` +
-		`&orientation=${nameOrientation}`;
-
+	// Carrega a cor salva do localStorage/Banco sempre que o modal abre
 	useEffect(() => {
-		hostName.current = window.location.host;
-	}, []);
+		if (props.show && props.playerId) {
+			const savedColor = localStorage.getItem(`portrait_dicecolor_${props.playerId}`);
+			if (savedColor) {
+				setDiceColor(savedColor);
+			}
+		}
+	}, [props.show, props.playerId]);
+
+	function handleColorChange(colorWithHash: string) {
+		const cleanColor = colorWithHash.replace('#', '');
+		setDiceColor(cleanColor);
+		localStorage.setItem(`portrait_dicecolor_${props.playerId}`, cleanColor);
+
+		// Salva no Banco de Dados para persistir no Portrait mesmo após dar F5
+		api.post('/config', { name: `diceColor_${props.playerId}`, value: cleanColor }).catch(console.error);
+	}
+
+	const origin = typeof window !== 'undefined' ? window.location.origin : '';
+	const portraitUrl = `${origin}/portrait/${props.playerId}?orientation=${orientation}&showdiceroll=${showDiceRoll}&dicecolor=${diceColor}`;
+
+	function copyUrl() {
+		navigator.clipboard.writeText(portraitUrl);
+		setCopied(true);
+		setTimeout(() => setCopied(false), 2000);
+	}
 
 	return (
-		<Modal show={props.show} onHide={props.onHide}>
-			<Modal.Header>
-				<Modal.Title>Retrato de Jogador</Modal.Title>
+		<Modal show={props.show} onHide={props.onHide} centered className='theme-element'>
+			<Modal.Header closeButton>
+				<Modal.Title>Link do Retrato do Personagem</Modal.Title>
 			</Modal.Header>
 			<Modal.Body>
-				<Container fluid>
-					<Row className='mb-3'>
-						<Col xs='auto' className='align-self-center'>
-							<label htmlFor={`portraitColor${props.playerId}`}>Cor dos dados:</label>
-						</Col>
-						<Col xs={2}>
+				<Row className='mb-3 align-items-center'>
+					<Col xs={12} md={6} className='mb-2 mb-md-0'>
+						<FormLabel htmlFor='orientationSelect' className='fw-bold'>
+							Orientação do Nome:
+						</FormLabel>
+						<FormControl
+							as='select'
+							id='orientationSelect'
+							className='theme-element'
+							value={orientation}
+							onChange={(e) => setOrientation(e.target.value as PortraitEnvironmentOrientation)}>
+							<option value='Direita'>Direita</option>
+							<option value='Esquerda'>Esquerda</option>
+						</FormControl>
+					</Col>
+					<Col xs={12} md={6}>
+						<FormLabel htmlFor='diceColorInput' className='fw-bold'>
+							Cor do Dado:
+						</FormLabel>
+						<div className='d-flex align-items-center'>
 							<FormControl
-								id={`portraitColor${props.playerId}`}
 								type='color'
-								value={diceColor}
-								onChange={(ev) => setDiceColor(ev.currentTarget.value)}
-								className='theme-element'
+								id='diceColorInput'
+								value={`#${diceColor}`}
+								onChange={(e) => handleColorChange(e.target.value)}
+								style={{ maxWidth: '60px', height: '38px', padding: '2px' }}
 							/>
-						</Col>
-					</Row>
-					<Row className='mb-3'>
-						<Col>
-							<FormCheck
-								inline
-								label='Rolagem dos dados visível?'
-								checked={showDiceRoll}
-								onChange={(ev) => setShowDiceRoll(ev.currentTarget.checked)}
-							/>
-						</Col>
-					</Row>
-					<Row>
-						<Col>
-							<FormGroup className='mb-3' controlId='portraitSettingsOrientation'>
-								<FormLabel>Orientação do Retrato</FormLabel>
-								<FormSelect
-									value={nameOrientation}
-									className='theme-element'
-									onChange={(ev) =>
-										setNameOrientation(ev.target.value as PortraitEnvironmentOrientation)
-									}>
-									{SETTINGS_ORIENTATIONS.map((or) => (
-										<option key={or} value={or}>
-											{or}
-										</option>
-									))}
-								</FormSelect>
-							</FormGroup>
-						</Col>
-					</Row>
-					<Row>
-						<hr />
-						<Col>
-							<FormControl className='theme-element' disabled value={fieldValue} />
-						</Col>
-						<Col xs='auto'>
-							<Button
-								variant='secondary'
-								onClick={() => {
-									const copied = copyToClipboard(fieldValue);
-									if (copied) {
-										alert('Link copiado para a sua área de transferência.');
-										props.onHide();
-									} else
-										alert(
-											'O link não pôde ser copiado para sua área de transferência.' +
-												' Por favor, copie o link manualmente.'
-										);
-								}}>
-								<RiFileCopyLine />
-							</Button>
-						</Col>
-					</Row>
-				</Container>
+							<span className='ms-2 text-muted'>#{diceColor.toUpperCase()}</span>
+						</div>
+					</Col>
+				</Row>
+				<Row className='mb-3'>
+					<Col>
+						<FormCheck
+							type='checkbox'
+							id='showDiceRollCheck'
+							label='Mostrar Rolagem de Dados'
+							checked={showDiceRoll}
+							onChange={(e) => setShowDiceRoll(e.target.checked)}
+						/>
+					</Col>
+				</Row>
+				<Row>
+					<Col>
+						<FormControl
+							type='text'
+							readOnly
+							value={portraitUrl}
+							className='theme-element mb-2'
+						/>
+					</Col>
+				</Row>
 			</Modal.Body>
 			<Modal.Footer>
 				<Button variant='secondary' onClick={props.onHide}>
-					OK
+					Fechar
+				</Button>
+				<Button variant='primary' onClick={copyUrl}>
+					{copied ? 'Copiado!' : 'Copiar Link'}
 				</Button>
 			</Modal.Footer>
 		</Modal>
