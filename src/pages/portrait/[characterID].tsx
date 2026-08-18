@@ -20,10 +20,12 @@ import prisma from '../../utils/database';
 type PageProps = InferGetServerSidePropsType<typeof getServerSideProps>;
 
 export default function Page(props: PageProps) {
-  const { ready } = useRealtime();
+  const { ready, on } = useRealtime();
+  const [environmentColor, setEnvironmentColor] = useState(props.environmentColor);
 
   useEffect(() => {
-    document.body.style.backgroundColor = 'transparent';
+    // Aplica a cor de fundo escolhida no banco (ou transparente se for vazio)
+    document.body.style.backgroundColor = environmentColor === 'transparent' ? 'transparent' : environmentColor;
 
     if (props.customFont) {
       const font = new FontFace('OpenRPG Custom Font', `url(${props.customFont.data})`);
@@ -32,7 +34,15 @@ export default function Page(props: PageProps) {
         document.body.classList.add('custom-font');
       });
     }
-  }, []);
+  }, [environmentColor, props.customFont]);
+
+  useEffect(() => {
+    // Atualiza a cor em tempo real quando o mestre muda no painel
+    const unsub = on('portraitEnvironmentColorChange', (payload) => {
+      setEnvironmentColor(payload.color);
+    });
+    return () => unsub();
+  }, [on]);
 
   if (props.notFound) return <h1>Personagem não existe.</h1>;
 
@@ -157,6 +167,8 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
       },
     }),
     prisma.config.findUnique({ where: { name: 'portrait_font' } }),
+    // BUSCA A COR DE FUNDO NO BANCO DE DADOS
+    prisma.config.findUnique({ where: { name: 'environmentColor' } })
   ]);
 
   if (!results[1])
@@ -173,6 +185,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
         nameOrientation,
         showDiceRoll,
         layouts: {},
+        environmentColor: 'transparent',
       },
     };
 
@@ -194,6 +207,9 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
   const sideAttribute =
     results[1].PlayerAttributes.find((attr) => attr.Attribute.portrait === 'SECONDARY') || null;
 
+  // Se não tiver cor salva, usa transparente
+  const environmentColor = results[3]?.value || 'transparent';
+
   return {
     props: {
       playerId: playerId,
@@ -207,6 +223,7 @@ export async function getServerSideProps(ctx: GetServerSidePropsContext) {
       nameOrientation,
       showDiceRoll,
       layouts,
+      environmentColor,
     },
   };
 }
